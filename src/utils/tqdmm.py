@@ -1,5 +1,6 @@
 from tqdm import tqdm
 
+TQDMM_KWARGS = {"ncols": 80, "leave": False}
 
 def tqdmm(iterable, desc=""):
-    return tqdm(iterable, desc=desc, ncols=80, leave=False)
+    return tqdm(iterable, desc=desc, **TQDMM_KWARGS)
