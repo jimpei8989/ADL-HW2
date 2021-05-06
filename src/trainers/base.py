@@ -20,6 +20,7 @@ class BaseTrainer:
         epochs=1,
         learning_rate=1e-3,
         weight_decay=1e-5,
+        gradient_accumulate=1,
         checkpoint_dir: Optional[Path] = None,
         checkpoint_freq: int = 5,
         device=None,
@@ -31,6 +32,7 @@ class BaseTrainer:
 
         self.optimizer = Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         self.scheduler = None
+        self.gradient_accumulate = gradient_accumulate
 
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_freq = checkpoint_freq
@@ -81,21 +83,27 @@ class BaseTrainer:
         all_metrics = defaultdict(list)
 
         with torch.set_grad_enabled(train):
-            for batch in tqdmm(
-                dataloader, desc=f"Epoch {epoch:02d} / {self.total_epochs:02d} [{split}]"
-            ):
+            original_desc = f"Epoch {epoch:02d} / {self.total_epochs:02d} [{split}] | loss: [LOSS]"
+            tqdm_iterator = tqdmm(
+                dataloader, desc=original_desc
+            )
+            for i, batch in enumerate(tqdm_iterator):
                 if train:
                     self.optimizer.zero_grad()
 
                 loss, metrics = self.run_batch(batch)
+                loss /= self.gradient_accumulate
 
                 if train:
                     loss.backward()
-                    self.optimizer.step()
+                    if (i + 1) % self.gradient_accumulate == 0:
+                        self.optimizer.step()
 
                 all_losses.append(loss.item())
                 for k, v in metrics.items():
                     all_metrics[k].append(v)
+
+                tqdm_iterator.set_description(original_desc.replace("[LOSS]", f"{loss:.4f}"))
 
         return np.mean(all_losses).item(), {k: np.mean(v).item() for k, v in all_metrics.items()}
 
