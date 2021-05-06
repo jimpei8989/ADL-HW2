@@ -54,23 +54,22 @@ class ChineseQADataset(Dataset):
         """
         question = self.data[index].get("question")
         relevant = self.data[index].get("relevant")
-        nonrelevant = random.sample(
-            [p for p in self.data[index].get("paragraphs") if p != relevant],
-            k=min(self.num_classes - 1, len(relevant) - 1),
-        )
+        nonrelevant = [p for p in self.data[index].get("paragraphs") if p != relevant]
 
-        paragraphs = [relevant] + nonrelevant
-        random.shuffle(paragraphs)
+        chosen = [relevant] + random.sample(
+            nonrelevant, k=min(self.num_classes - 1, len(nonrelevant))
+        )
+        random.shuffle(chosen)
 
         question_tokens = self.tokenizer.tokenize(question)
         target_length = 512 - len(question_tokens) - 3
-        paragraph_tokens = [self.tokenizer.tokenize(self.contexts[pid]) for pid in paragraphs]
+        paragraph_tokens = [self.tokenizer.tokenize(self.contexts[pid]) for pid in chosen]
 
         input_ids = [
             self.tokenizer.convert_tokens_to_ids(
                 ["[CLS]"] + question_tokens + ["[SEP]"] + para_tokens[:target_length] + ["[SEP]"]
             )
-            for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(paragraphs))]
+            for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(chosen))]
         ]
 
         input_ids = torch.stack(
@@ -82,7 +81,7 @@ class ChineseQADataset(Dataset):
 
         return {
             "input_ids": input_ids,
-            "label": paragraphs.index(relevant),
+            "label": chosen.index(relevant),
         }
 
     def get_item_for_span(self, index: int):

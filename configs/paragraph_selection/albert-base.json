@@ -3,7 +3,8 @@
     "trainer": {
         "epochs": 5,
         "learning_rate": 0.00002,
-        "weight_decay": 0.00001
+        "weight_decay": 0.00001,
+        "checkpoint_freq": 1
     },
     "model": {
         "bert_name": "voidful/albert_chinese_base",
