@@ -30,7 +30,7 @@ def main(args):
 
     if args.do_train:
         model = Selector(**config.model)
-        trainer = SelectionTrainer(model, checkpoint_dir=config.checkpoint_dir, device=args.device)
+        trainer = SelectionTrainer(model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer)
         trainer.train(
             to_dataloader(
                 ChineseQADataset(

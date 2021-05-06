@@ -1,12 +1,17 @@
 {
-    "checkpoint_dir": "checkpoints/paragraph_selection/default",
+    "checkpoint_dir": "checkpoints/paragraph_selection/albert_base",
+    "trainer": {
+        "epochs": 5,
+        "learning_rate": 0.00002,
+        "weight_decay": 0.00001
+    },
     "model": {
         "bert_name": "voidful/albert_chinese_base",
         "bert_hidden_size": 768,
         "num_classes": 7
     },
     "misc": {
-        "batch_size": 2,
+        "batch_size": 4,
         "num_workers": 8
     }
 }
