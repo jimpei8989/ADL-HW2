@@ -38,13 +38,19 @@ def main(args):
     #         ]
     #     )
     # )
+    def print_counter(counter):
+        return "{\n" + "\n".join(f"  {k} -> {v}" for k, v in sorted(counter.items())) + "\n}"
 
     def analyze(json_name, is_private=False):
         logger.info(f"Analyzing {json_name}...")
-        train_data = json_load(args.dataset_dir / json_name)
-        logger.info(f"#training examples: {len(train_data)}")
-        num_paragraph_counter = Counter(map(lambda d: len(d["paragraphs"]), train_data))
-        logger.info(f"About the related paragraphs: {num_paragraph_counter}")
+        data = json_load(args.dataset_dir / json_name)
+        logger.info(f"#training examples: {len(data)}")
+
+        num_paragraph_counter = Counter(map(lambda d: len(d["paragraphs"]), data))
+        logger.info(f"About the related paragraphs: {print_counter(num_paragraph_counter)}")
+
+        question_length_counter = Counter(map(lambda d: len(d["question"]) // 10, data))
+        logger.info(f"About the question lengths: {print_counter(question_length_counter)}")
 
     analyze("train.json")
     analyze("public.json")
