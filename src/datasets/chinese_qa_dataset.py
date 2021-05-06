@@ -56,7 +56,7 @@ class ChineseQADataset(Dataset):
         relevant = self.data[index].get("relevant")
         nonrelevant = random.sample(
             [p for p in self.data[index].get("paragraphs") if p != relevant],
-            k=self.num_classes - 1,
+            k=min(self.num_classes - 1, len(relevant) - 1),
         )
 
         paragraphs = [relevant] + nonrelevant

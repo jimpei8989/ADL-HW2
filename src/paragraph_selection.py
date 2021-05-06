@@ -23,7 +23,7 @@ def main(args):
     def set_seed_for_dataset_worker(worker_id):
         set_seed(args.seed ^ worker_id)
 
-    def todataloader(dataset, **kwargs):
+    def to_dataloader(dataset, **kwargs):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
