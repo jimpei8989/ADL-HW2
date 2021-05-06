@@ -1,0 +1,83 @@
+from pathlib import Path
+from typing import Optional
+
+import torch
+from torch.utils.data import Dataset
+from transformers import BertTokenizer
+
+from utils.io import json_load
+
+
+class ChineseQADataset(Dataset):
+    def __init__(
+        self,
+        context_json: Path,
+        data_json: Path,
+        num_classes: int = 7,
+        tokenizer: Optional[BertTokenizer] = None,
+        test: bool = False,
+        use_selection: bool = True,
+        use_span: bool = True,
+    ):
+        super().__init__()
+        self.contexts = json_load(context_json)
+        self.data = json_load(data_json)
+        self.num_classes = num_classes
+        self.tokenizer = tokenizer
+        self.test = test
+        self.use_selection = use_selection
+        self.use_span = use_span
+
+    def set_tokenizer(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index: int):
+        ret = {}
+        if self.use_selection:
+            ret |= {f"sel_{k}": v for k, v in self.get_item_for_selection(self, index)}
+        if self.use_span:
+            ret |= {f"span_{k}": v for k, v in self.get_item_for_span(self, index)}
+        return ret
+
+    def get_item_for_selection(self, index: int):
+        """
+        Parameters:
+            index: int
+
+        Returns:
+            input_ids: a tensor of shape (N, L)
+            label: an integer
+        """
+        question = self.data[index].get("question")
+        paragraphs = self.data[index].get("paragraphs")
+        relevant = self.data[index].get("relevant")
+
+        question_tokens = self.tokenizer.tokenize(question)
+        target_length = 512 - len(question_tokens) - 3
+        paragraph_tokens = [self.tokenizer.tokenize(paragraph) for paragraph in paragraphs]
+
+        input_ids = torch.stack(
+            [
+                self.tokenizer.convert_tokens_to_ids(
+                    [
+                        ["[CLS]"]
+                        + question_tokens
+                        + ["[SEP]"]
+                        + para_tokens[:target_length]
+                        + ["[SEP]"]
+                    ]
+                )
+                for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(paragraphs))]
+            ]
+        )
+
+        return {
+            "input_ids": input_ids,
+            "label": paragraphs.index(relevant),
+        }
+
+    def get_item_for_span(self, index: int):
+        return {}
