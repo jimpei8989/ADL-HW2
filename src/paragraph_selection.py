@@ -21,7 +21,7 @@ def main(args):
     tokenizer = BertTokenizer.from_pretrained(config.model.bert_name)
 
     def set_seed_for_dataset_worker(worker_id):
-        set_seed(args.seed ^ worker_id)
+        set_seed(args.seed + worker_id)
 
     def to_dataloader(dataset, **kwargs):
         return DataLoader(
@@ -34,7 +34,9 @@ def main(args):
 
     if args.do_train:
         model = Selector(**config.model)
-        trainer = SelectionTrainer(model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer)
+        trainer = SelectionTrainer(
+            model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
+        )
         trainer.train(
             to_dataloader(
                 ChineseQADataset(
@@ -42,7 +44,7 @@ def main(args):
                     args.dataset_dir / "train.json",
                     tokenizer=tokenizer,
                     num_classes=2,
-                    use_selection=True
+                    use_selection=True,
                 )
             ),
             to_dataloader(
@@ -50,13 +52,28 @@ def main(args):
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "public.json",
                     tokenizer=tokenizer,
-                    use_selection=True
+                    use_selection=True,
                 )
             ),
         )
 
     if args.do_evaluate:
-        pass
+        model = Selector(**config.model)
+        print(model)
+        trainer = SelectionTrainer(
+            model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
+        )
+        trainer.evaluate(
+            to_dataloader(
+                ChineseQADataset(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "public.json",
+                    tokenizer=tokenizer,
+                    use_selection=True,
+                )
+            ),
+            split="public"
+        )
 
     if args.do_predict:
         pass

@@ -69,10 +69,10 @@ class ChineseQADataset(Dataset):
             self.tokenizer.convert_tokens_to_ids(
                 ["[CLS]"] + question_tokens + ["[SEP]"] + para_tokens[:target_length] + ["[SEP]"]
             )
-            for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(chosen))]
-        ]
+            for para_tokens in paragraph_tokens
+        ] + [[self.tokenizer.cls_token_id]] * (self.num_classes - len(chosen))
 
-        input_ids = torch.stack(
+        input_tensor = torch.stack(
             [
                 torch.as_tensor(ids + [self.tokenizer.pad_token_id] * (512 - len(ids)))
                 for ids in input_ids
@@ -80,7 +80,7 @@ class ChineseQADataset(Dataset):
         )
 
         return {
-            "input_ids": input_ids,
+            "input_ids": input_tensor,
             "label": chosen.index(relevant),
         }
 
