@@ -1,0 +1,6 @@
+{
+    "model": {
+        "bert_name": "bert-base-chinese",
+        "num_classes": 7
+    }
+}
