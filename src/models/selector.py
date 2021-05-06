@@ -1,6 +1,6 @@
 from torch import nn
 from torch import Tensor, LongTensor
-from transformers import BertModel
+from transformers import AutoModel
 
 from models.base import BaseModel
 
@@ -9,11 +9,12 @@ class Selector(nn.Module, BaseModel):
     def __init__(
         self,
         bert_name: str = "bert-base-chinese",
+        bert_hidden_size: int = 768,
         num_classes: int = 7,
     ):
         super().__init__()
-        self.bert = BertModel.from_pretrained(bert_name)
-        self.head = nn.Linear(512, num_classes)
+        self.bert = AutoModel.from_pretrained(bert_name)
+        self.head = nn.Linear(bert_hidden_size, 1)
 
     def forward(self, input_ids: LongTensor) -> Tensor:
         """
@@ -22,6 +23,8 @@ class Selector(nn.Module, BaseModel):
         Returns
             logits: torch.FloatTensor of shape (B, N)
         """
-        hidden_state = self.bert(input_ids)
-        logits = self.head(hidden_state)
+        B, N, L = input_ids.shape
+        bert_output = self.bert(input_ids.reshape(-1, L))
+        pooler_output = bert_output.pooler_output.reshape(B, N, -1)
+        logits = self.head(pooler_output).squeeze(-1)
         return logits

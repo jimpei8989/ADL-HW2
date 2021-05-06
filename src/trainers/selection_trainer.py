@@ -13,9 +13,9 @@ class SelectionTrainer(BaseTrainer):
         return {"acc": torch.eq(y_hat.argmax(dim=1), labels).to(torch.float).mean()}
 
     def run_batch(self, batch):
-        y_hat = self.model(batch["input_ids"].to(self.device))
-        loss = self.criterion(y_hat, batch["label"].to(self.device))
-        return loss, self.metrics_fn(y_hat, batch["label"])
+        y_hat = self.model(batch["sel_input_ids"].to(self.device))
+        loss = self.criterion(y_hat, batch["sel_label"].to(self.device))
+        return loss, self.metrics_fn(y_hat.cpu(), batch["sel_label"])
 
     def run_predict_batch(self, batch):
         pass

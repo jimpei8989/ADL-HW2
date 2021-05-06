@@ -3,6 +3,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
+from transformers import BertTokenizer
 
 from datasets.chinese_qa_dataset import ChineseQADataset
 from models.selector import Selector
@@ -17,29 +18,34 @@ def main(args):
     config = Config.load(args.config_json)
     logger.info(f"Config: {config}")
 
+    tokenizer = BertTokenizer.from_pretrained(config.model.bert_name)
+
     def to_dataloader(dataset, **kwargs):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
-            num_workers=config.num_workers,
+            num_workers=config.misc.num_workers,
             **kwargs,
         )
 
     if args.do_train:
-        model = Selector(config.model)
+        model = Selector(**config.model)
         trainer = SelectionTrainer(model, checkpoint_dir=config.checkpoint_dir, device=args.device)
         trainer.train(
-            DataLoader(
+            to_dataloader(
                 ChineseQADataset(
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "train.json",
+                    tokenizer=tokenizer,
+                    num_classes=2,
                     use_selection=True
                 )
             ),
-            DataLoader(
+            to_dataloader(
                 ChineseQADataset(
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "public.json",
+                    tokenizer=tokenizer,
                     use_selection=True
                 )
             ),
@@ -74,7 +80,7 @@ def parse_arguments():
     args = parser.parse_args()
     args.device = torch.device("cuda" if args.gpu else "cpu")
 
-    assert args.do_predict and all(a is not None for a in [args.test_json, args.predict_csv])
+    assert not args.do_predict or all(a is not None for a in [args.test_json, args.predict_csv])
 
     return args
 

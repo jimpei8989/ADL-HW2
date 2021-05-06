@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 from typing import Optional
 
@@ -37,9 +38,9 @@ class ChineseQADataset(Dataset):
     def __getitem__(self, index: int):
         ret = {}
         if self.use_selection:
-            ret |= {f"sel_{k}": v for k, v in self.get_item_for_selection(self, index)}
+            ret.update({f"sel_{k}": v for k, v in self.get_item_for_selection(index).items()})
         if self.use_span:
-            ret |= {f"span_{k}": v for k, v in self.get_item_for_span(self, index)}
+            ret.update({f"span_{k}": v for k, v in self.get_item_for_span(index).items()})
         return ret
 
     def get_item_for_selection(self, index: int):
@@ -52,25 +53,30 @@ class ChineseQADataset(Dataset):
             label: an integer
         """
         question = self.data[index].get("question")
-        paragraphs = self.data[index].get("paragraphs")
         relevant = self.data[index].get("relevant")
+        nonrelevant = random.sample(
+            [p for p in self.data[index].get("paragraphs") if p != relevant],
+            k=self.num_classes - 1,
+        )
+
+        paragraphs = [relevant] + nonrelevant
+        random.shuffle(paragraphs)
 
         question_tokens = self.tokenizer.tokenize(question)
         target_length = 512 - len(question_tokens) - 3
-        paragraph_tokens = [self.tokenizer.tokenize(paragraph) for paragraph in paragraphs]
+        paragraph_tokens = [self.tokenizer.tokenize(self.contexts[pid]) for pid in paragraphs]
+
+        input_ids = [
+            self.tokenizer.convert_tokens_to_ids(
+                ["[CLS]"] + question_tokens + ["[SEP]"] + para_tokens[:target_length] + ["[SEP]"]
+            )
+            for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(paragraphs))]
+        ]
 
         input_ids = torch.stack(
             [
-                self.tokenizer.convert_tokens_to_ids(
-                    [
-                        ["[CLS]"]
-                        + question_tokens
-                        + ["[SEP]"]
-                        + para_tokens[:target_length]
-                        + ["[SEP]"]
-                    ]
-                )
-                for para_tokens in paragraph_tokens + [[] * (self.num_classes - len(paragraphs))]
+                torch.as_tensor(ids + [self.tokenizer.pad_token_id] * (512 - len(ids)))
+                for ids in input_ids
             ]
         )
 
