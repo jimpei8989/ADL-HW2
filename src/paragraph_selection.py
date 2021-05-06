@@ -20,11 +20,15 @@ def main(args):
 
     tokenizer = BertTokenizer.from_pretrained(config.model.bert_name)
 
-    def to_dataloader(dataset, **kwargs):
+    def set_seed_for_dataset_worker(worker_id):
+        set_seed(args.seed ^ worker_id)
+
+    def todataloader(dataset, **kwargs):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
             num_workers=config.misc.num_workers,
+            worker_init_fn=set_seed_for_dataset_worker,
             **kwargs,
         )
 
