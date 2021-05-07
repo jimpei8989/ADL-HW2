@@ -1,5 +1,5 @@
 import torch
-from torch.nn import CrossEntropyLoss
+from torch.nn import BCEWithLogitsLoss
 
 from trainers.base import BaseTrainer
 
@@ -7,10 +7,10 @@ from trainers.base import BaseTrainer
 class SelectionTrainer(BaseTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.criterion = CrossEntropyLoss()
+        self.criterion = BCEWithLogitsLoss()
 
     def metrics_fn(self, y_hat, labels):
-        return {"acc": torch.eq(y_hat.argmax(dim=1), labels).to(torch.float).mean()}
+        return {"acc": torch.eq(y_hat.argmax(dim=1), labels.argmax(dim=1)).to(torch.float).mean()}
 
     def run_batch(self, batch):
         y_hat = self.model(batch["sel_input_ids"].to(self.device))

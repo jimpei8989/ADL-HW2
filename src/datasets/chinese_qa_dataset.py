@@ -81,7 +81,10 @@ class ChineseQADataset(Dataset):
 
         return {
             "input_ids": input_tensor,
-            "label": chosen.index(relevant),
+            "label": torch.as_tensor(
+                [int(i == chosen.index(relevant)) for i in range(self.num_classes)],
+                dtype=torch.float
+            ),
         }
 
     def get_item_for_span(self, index: int):
