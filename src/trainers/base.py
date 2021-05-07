@@ -104,6 +104,9 @@ class BaseTrainer:
                     all_metrics[k].append(v)
 
                 tqdm_iterator.set_description(original_desc.replace("[LOSS]", f"{loss:.4f}"))
+            else:
+                if train:
+                    self.optimizer.step()
 
         return np.mean(all_losses).item(), {k: np.mean(v).item() for k, v in all_metrics.items()}
 
