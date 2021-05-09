@@ -37,24 +37,27 @@ def main(args):
         trainer = SelectionTrainer(
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
+        dataset = ChineseQADataset(
+            args.dataset_dir / "context.json",
+            args.dataset_dir / "train.json",
+            tokenizer=tokenizer,
+            num_classes=7,
+            use_selection=True,
+        )
+
+        train_size = int(0.8 * len(dataset))
+
+        train_split, val_split = torch.utils.data.random_split(
+            dataset,
+            [train_size, len(dataset) - train_size],
+            generator=torch.Generator().manual_seed(args.seed),
+        )
+
+        train_split.dataset.num_classes = 2
+
         trainer.train(
-            to_dataloader(
-                ChineseQADataset(
-                    args.dataset_dir / "context.json",
-                    args.dataset_dir / "train.json",
-                    tokenizer=tokenizer,
-                    num_classes=2,
-                    use_selection=True,
-                )
-            ),
-            to_dataloader(
-                ChineseQADataset(
-                    args.dataset_dir / "context.json",
-                    args.dataset_dir / "public.json",
-                    tokenizer=tokenizer,
-                    use_selection=True,
-                )
-            ),
+            to_dataloader(train_split),
+            to_dataloader(val_split),
         )
 
     if args.do_evaluate:
@@ -72,7 +75,7 @@ def main(args):
                     use_selection=True,
                 )
             ),
-            split="public"
+            split="public",
         )
 
     if args.do_predict:

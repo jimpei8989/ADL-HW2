@@ -9,12 +9,10 @@ class Selector(nn.Module, BaseModel):
     def __init__(
         self,
         bert_name: str = "bert-base-chinese",
-        bert_hidden_size: int = 768,
-        num_classes: int = 7,
     ):
         super().__init__()
         self.bert = AutoModel.from_pretrained(bert_name)
-        self.head = nn.Linear(bert_hidden_size, 1)
+        self.head = nn.Linear(self.bert.config.hidden_size, 1)
 
     def forward(self, input_ids: LongTensor) -> Tensor:
         """
