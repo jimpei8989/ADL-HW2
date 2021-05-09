@@ -25,7 +25,7 @@ class QATrainer(BaseTrainer):
             end_logits, batch["end_index"].to(self.device)
         )
         return loss, self.metrics_fn(
-            start_logits, end_logits, batch["start_index"], batch["end_index"]
+            start_logits.cpu(), end_logits.cpu(), batch["start_index"], batch["end_index"]
         )
 
     def run_predict_batch(self, batch):
