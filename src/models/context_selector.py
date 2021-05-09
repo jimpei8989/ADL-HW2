@@ -5,7 +5,7 @@ from transformers import AutoModel
 from models.base import BaseModel
 
 
-class Selector(nn.Module, BaseModel):
+class ContextSelector(nn.Module, BaseModel):
     def __init__(
         self,
         bert_name: str = "bert-base-chinese",

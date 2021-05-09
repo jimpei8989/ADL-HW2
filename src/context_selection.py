@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
 from datasets.chinese_qa_dataset import ChineseQADataset
-from models.selector import Selector
-from trainers.selection_trainer import SelectionTrainer
+from models.context_selector import ContextSelector
+from trainers.context_selection_trainer import ContextSelectionTrainer
 from utils import set_seed
 from utils.config import Config
 from utils.logger import logger
@@ -33,8 +33,8 @@ def main(args):
         )
 
     if args.do_train:
-        model = Selector(**config.model)
-        trainer = SelectionTrainer(
+        model = ContextSelector(**config.model)
+        trainer = ContextSelectionTrainer(
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
         dataset = ChineseQADataset(
@@ -61,9 +61,9 @@ def main(args):
         )
 
     if args.do_evaluate:
-        model = Selector(**config.model)
+        model = ContextSelector(**config.model)
         print(model)
-        trainer = SelectionTrainer(
+        trainer = ContextSelectionTrainer(
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
         trainer.evaluate(

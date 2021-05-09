@@ -4,7 +4,7 @@ from torch.nn import BCEWithLogitsLoss
 from trainers.base import BaseTrainer
 
 
-class SelectionTrainer(BaseTrainer):
+class ContextSelectionTrainer(BaseTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.criterion = BCEWithLogitsLoss()
