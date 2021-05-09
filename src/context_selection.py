@@ -42,7 +42,6 @@ def main(args):
             args.dataset_dir / "train.json",
             tokenizer=tokenizer,
             num_classes=7,
-            use_selection=True,
         )
 
         train_size = int(0.8 * len(dataset))
@@ -78,7 +77,6 @@ def main(args):
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "public.json",
                     tokenizer=tokenizer,
-                    use_selection=True,
                 )
             ),
             split="public",

@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import torch
 from torch.utils.data import Dataset
@@ -18,13 +18,11 @@ class ContextDataset(Dataset):
 
     def __init__(
         self,
-        contexts: Path,
-        data: Path,
+        contexts: List[str],
+        data: List[dict],
         num_classes: int = 7,
         tokenizer: Optional[BertTokenizer] = None,
         test: bool = False,
-        use_selection: bool = True,
-        use_span: bool = True,
     ):
         super().__init__()
         self.contexts = contexts
@@ -32,8 +30,6 @@ class ContextDataset(Dataset):
         self.num_classes = num_classes
         self.tokenizer = tokenizer
         self.test = test
-        self.use_selection = use_selection
-        self.use_span = use_span
 
     def __len__(self):
         return len(self.data)
