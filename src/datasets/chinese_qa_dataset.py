@@ -9,11 +9,17 @@ from transformers import BertTokenizer
 from utils.io import json_load
 
 
-class ChineseQADataset(Dataset):
+class ChineseQADatasetForContextSelection(Dataset):
+    @classmethod
+    def from_json(cls, context_json: Path, data_json: Path, **kwargs):
+        contexts = json_load(context_json)
+        data = json_load(data_json)
+        return cls(contexts, data, **kwargs)
+
     def __init__(
         self,
-        context_json: Path,
-        data_json: Path,
+        contexts: Path,
+        data: Path,
         num_classes: int = 7,
         tokenizer: Optional[BertTokenizer] = None,
         test: bool = False,
@@ -21,29 +27,18 @@ class ChineseQADataset(Dataset):
         use_span: bool = True,
     ):
         super().__init__()
-        self.contexts = json_load(context_json)
-        self.data = json_load(data_json)
+        self.contexts = contexts
+        self.data = data
         self.num_classes = num_classes
         self.tokenizer = tokenizer
         self.test = test
         self.use_selection = use_selection
         self.use_span = use_span
 
-    def set_tokenizer(self, tokenizer):
-        self.tokenizer = tokenizer
-
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index: int):
-        ret = {}
-        if self.use_selection:
-            ret.update({f"sel_{k}": v for k, v in self.get_item_for_selection(index).items()})
-        if self.use_span:
-            ret.update({f"span_{k}": v for k, v in self.get_item_for_span(index).items()})
-        return ret
-
-    def get_item_for_selection(self, index: int):
         """
         Parameters:
             index: int
@@ -86,6 +81,3 @@ class ChineseQADataset(Dataset):
                 dtype=torch.float
             ),
         }
-
-    def get_item_for_span(self, index: int):
-        return {}
