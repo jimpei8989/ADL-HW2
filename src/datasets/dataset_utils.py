@@ -2,6 +2,7 @@ from typing import Optional
 
 NO_SPAN = -1
 
+
 def split_context_and_tokenize(
     question: str,
     context: str,
@@ -9,7 +10,7 @@ def split_context_and_tokenize(
     end_index: int,
     tokenizer,
     tokenizer_max_length: int = 512,
-    add_to_dict: Optional[dict] = {}
+    add_to_dict: Optional[dict] = {},
 ):
     # print(question, context, start_index)
     question_tokens = tokenizer.tokenize(question)
@@ -74,17 +75,17 @@ def split_context_and_tokenize(
     for fragment in raw:
         if (
             len(compressed) == 0
-            or len(compressed[-1]["paragraph_tokens"]) + len(fragment["paragraph_tokens"]) > maximum_length
+            or len(compressed[-1]["paragraph_tokens"]) + len(fragment["paragraph_tokens"])
+            > maximum_length
         ):
             compressed.append(fragment)
         else:
             compressed[-1] = merge_fragments(compressed[-1], fragment)
 
-    def finalize(d):
-        d.update({"question": question, "question_tokens": question_tokens, **add_to_dict})
-        return d
-
-    return [finalize(d) for d in compressed]
+    return [
+        d | {"question": question, "question_tokens": question_tokens} | add_to_dict
+        for d in compressed
+    ]
 
 
 if __name__ == "__main__":

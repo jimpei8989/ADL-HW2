@@ -37,26 +37,24 @@ def main(args):
         trainer = ContextSelectionTrainer(
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
-        dataset = ContextDataset.from_json(
-            args.dataset_dir / "context.json",
-            args.dataset_dir / "train.json",
-            tokenizer=tokenizer,
-            num_classes=7,
-        )
-
-        train_size = int(0.8 * len(dataset))
-
-        train_split, val_split = torch.utils.data.random_split(
-            dataset,
-            [train_size, len(dataset) - train_size],
-            generator=torch.Generator().manual_seed(args.seed),
-        )
-
-        train_split.dataset.num_classes = 2
 
         trainer.train(
-            to_dataloader(train_split),
-            to_dataloader(val_split),
+            to_dataloader(
+                ContextDataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "train_splitted.json",
+                    tokenizer=tokenizer,
+                    num_classes=2,
+                )
+            ),
+            to_dataloader(
+                ContextDataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "val_splitted.json",
+                    tokenizer=tokenizer,
+                    num_classes=7,
+                )
+            ),
         )
 
     if args.do_evaluate:
@@ -77,6 +75,7 @@ def main(args):
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "public.json",
                     tokenizer=tokenizer,
+                    num_classes=2,
                 )
             ),
             split="public",
