@@ -9,7 +9,7 @@ from transformers import BertTokenizer
 from utils.io import json_load
 
 
-class ChineseQADatasetForContextSelection(Dataset):
+class ContextDataset(Dataset):
     @classmethod
     def from_json(cls, context_json: Path, data_json: Path, **kwargs):
         contexts = json_load(context_json)
