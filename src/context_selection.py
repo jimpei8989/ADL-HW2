@@ -61,11 +61,17 @@ def main(args):
         )
 
     if args.do_evaluate:
-        model = ContextSelector(**config.model)
-        print(model)
+        model = (
+            ContextSelector.from_checkpoint(config.model, args.specify_checkpoint)
+            if args.specify_checkpoint
+            else ContextSelector.load_weights(
+                config.model, config.checkpoint_dir / "model_weights.pt"
+            )
+        )
         trainer = ContextSelectionTrainer(
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
+
         trainer.evaluate(
             to_dataloader(
                 ChineseQADataset(
@@ -99,6 +105,7 @@ def parse_arguments():
     # Misc
     parser.add_argument("--gpu", action="store_true")
     parser.add_argument("--seed", default=0x06902029)
+    parser.add_argument("--specify_checkpoint", type=Path)
     parser.add_argument("--override_batch_size", type=int)
 
     args = parser.parse_args()

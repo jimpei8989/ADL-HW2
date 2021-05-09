@@ -1,5 +1,5 @@
 {
-    "checkpoint_dir": "checkpoints/paragraph_selection/default",
+    "checkpoint_dir": "checkpoints/context_selection/bert_base",
     "trainer": {
         "epochs": 10,
         "learning_rate": 0.00002,

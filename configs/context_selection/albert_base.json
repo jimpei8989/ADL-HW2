@@ -1,10 +1,10 @@
 {
-    "checkpoint_dir": "checkpoints/paragraph_selection/albert_base",
+    "checkpoint_dir": "checkpoints/context_selection/albert_base",
     "trainer": {
         "epochs": 10,
         "learning_rate": 0.00001,
         "weight_decay": 0.00001,
-        "gradient_accumulate": 5,
+        "gradient_accumulate": 8,
         "checkpoint_freq": 1
     },
     "model": {
