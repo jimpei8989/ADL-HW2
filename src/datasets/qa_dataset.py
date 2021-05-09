@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset
 from transformers import BertTokenizer
 
-from datasets.dataset_utils import split_context_and_tokenize, NO_SPAN
+from datasets.dataset_utils import pad_sequence, split_context_and_tokenize, NO_SPAN
 from utils.io import json_load
 from utils.logger import logger
 from utils.tqdmm import tqdmm
@@ -83,11 +83,17 @@ class QADataset(Dataset):
         paragraph_tokens = self.data[index].get("paragraph_tokens")
 
         input_ids = self.tokenizer.convert_tokens_to_ids(
-            [self.tokenizer.cls_token]
-            + question_tokens
-            + [self.tokenizer.sep_token]
-            + paragraph_tokens
-            + [self.tokenizer.sep_token]
+            pad_sequence(
+                (
+                    [self.tokenizer.cls_token]
+                    + question_tokens
+                    + [self.tokenizer.sep_token]
+                    + paragraph_tokens
+                    + [self.tokenizer.sep_token]
+                ),
+                target_length=512,
+                pad_token=self.tokenizer.pad_token,
+            )
         )
 
         return {

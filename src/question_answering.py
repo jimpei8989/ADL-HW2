@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
 from datasets.qa_dataset import QADataset
-# from models.qa_model import QAModel
-# from trainers.qa_trainer import QATrainer
+from models.qa_model import QAModel
+from trainers.qa_trainer import QATrainer
 from utils import set_seed
 from utils.config import Config
 from utils.logger import logger
@@ -33,28 +33,26 @@ def main(args):
         )
 
     if args.do_train:
-        # model = ContextSelector(**config.model)
-        # trainer = ContextSelectionTrainer(
-        #     model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
-        # )
-        dataset = QADataset.from_json(
-            args.dataset_dir / "context.json",
-            args.dataset_dir / "train.json",
-            tokenizer=tokenizer,
+        model = QAModel(**config.model)
+        trainer = QATrainer(
+            model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
-
-        # train_size = int(0.8 * len(dataset))
-
-        # train_split, val_split = torch.utils.data.random_split(
-        #     dataset,
-        #     [train_size, len(dataset) - train_size],
-        #     generator=torch.Generator().manual_seed(args.seed),
-        # )
-
-        # trainer.train(
-        #     to_dataloader(train_split),
-        #     to_dataloader(val_split),
-        # )
+        trainer.train(
+            to_dataloader(
+                QADataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "train_splitted.json",
+                    tokenizer=tokenizer,
+                )
+            ),
+            to_dataloader(
+                QADataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "val_splitted.json",
+                    tokenizer=tokenizer,
+                )
+            ),
+        )
 
     if args.do_evaluate:
         pass

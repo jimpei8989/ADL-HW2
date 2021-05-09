@@ -3,6 +3,10 @@ from typing import Optional
 NO_SPAN = -1
 
 
+def pad_sequence(tokens, target_length, pad_token):
+    return tokens + [pad_token] * (target_length - len(tokens))
+
+
 def split_context_and_tokenize(
     question: str,
     context: str,

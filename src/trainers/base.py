@@ -83,9 +83,7 @@ class BaseTrainer:
         all_metrics = defaultdict(list)
 
         with torch.set_grad_enabled(train):
-            original_desc = f"[{split}] | loss: [LOSS] | [METRICS]"
-            if train:
-                original_desc = f"Epoch {epoch:02d} / {self.total_epochs:02d} " + original_desc
+            original_desc = f"{split} | loss: [LOSS] | [METRICS]"
 
             tqdm_iterator = tqdmm(dataloader, desc=original_desc)
             for i, batch in enumerate(tqdm_iterator):

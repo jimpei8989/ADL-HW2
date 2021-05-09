@@ -1,0 +1,17 @@
+{
+    "checkpoint_dir": "checkpoints/question_answering/bert_base",
+    "trainer": {
+        "epochs": 10,
+        "learning_rate": 0.00001,
+        "weight_decay": 0.00001,
+        "gradient_accumulate": 8,
+        "checkpoint_freq": 1
+    },
+    "model": {
+        "bert_name": "bert-base-chinese"
+    },
+    "misc": {
+        "batch_size": 2,
+        "num_workers": 8
+    }
+}
