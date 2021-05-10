@@ -8,15 +8,15 @@ from utils.logger import logger
 
 class BaseModel:
     @classmethod
-    def load_weights(cls, config: Dict, weights_path: Path):
+    def load_weights(cls, config: Dict, weights_path: Path, device=None):
         logger.info(f"Loading weights from {weights_path}")
-        state_dict = torch.load(weights_path)
+        state_dict = torch.load(weights_path, device=device)
         return cls.from_state_dict(config, state_dict)
 
     @classmethod
-    def from_checkpoint(cls, config: Dict, checkpoint_path: Path):
+    def from_checkpoint(cls, config: Dict, checkpoint_path: Path, device=None):
         logger.info(f"Loading checkpoint from {checkpoint_path}")
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, device=device)
         return cls.from_state_dict(config, checkpoint["model_state_dict"])
 
     @classmethod

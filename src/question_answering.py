@@ -1,11 +1,13 @@
 from argparse import ArgumentParser
 from pathlib import Path
+from functools import partial
 
 import torch
 from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
 from datasets.qa_dataset import QADataset
+from datasets.utils import create_mini_batch
 from models.qa_model import QAModel
 from trainers.qa_trainer import QATrainer
 from utils import set_seed
@@ -19,16 +21,19 @@ def main(args):
     logger.info(f"Config: {config}")
 
     tokenizer = BertTokenizer.from_pretrained(config.model.bert_name)
-
-    def set_seed_for_dataset_worker(worker_id):
-        set_seed(args.seed + worker_id)
+    cache_dir = args.cache_dir / config.model.bert_name
+    cache_dir.mkdir(parents=True, exist_ok=True)
 
     def to_dataloader(dataset, **kwargs):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
             num_workers=config.misc.num_workers,
-            worker_init_fn=set_seed_for_dataset_worker,
+            collate_fn=partial(
+                create_mini_batch,
+                pad_keys=set(QADataset.TO_BE_PADDED),
+                padding_value=tokenizer.pad_token_id,
+            ),
             **kwargs,
         )
 
@@ -43,6 +48,8 @@ def main(args):
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "train_splitted.json",
                     tokenizer=tokenizer,
+                    split_name="train",
+                    cache_dir=cache_dir,
                 )
             ),
             to_dataloader(
@@ -50,12 +57,42 @@ def main(args):
                     args.dataset_dir / "context.json",
                     args.dataset_dir / "val_splitted.json",
                     tokenizer=tokenizer,
+                    split_name="val",
+                    cache_dir=cache_dir,
                 )
             ),
         )
 
+    if args.do_evaluate or args.do_predict:
+        # TODO
+        model = QAModel(**config)
+        trainer = QATrainer(model, device=args.device)
+
     if args.do_evaluate:
-        pass
+        trainer.evaluate(
+            to_dataloader(
+                QADataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "val_splitted.json",
+                    tokenizer=tokenizer,
+                    split_name="val",
+                    cache_dir=cache_dir,
+                )
+            ),
+            split="val",
+        )
+        trainer.evaluate(
+            to_dataloader(
+                QADataset.from_json(
+                    args.dataset_dir / "context.json",
+                    args.dataset_dir / "public.json",
+                    tokenizer=tokenizer,
+                    split_name="public",
+                    cache_dir=cache_dir,
+                )
+            ),
+            split="public",
+        )
 
     if args.do_predict:
         pass
@@ -67,6 +104,7 @@ def parse_arguments():
 
     # Filesystem
     parser.add_argument("--dataset_dir", type=Path, default=Path("dataset/chineseQA"))
+    parser.add_argument("--cache_dir", type=Path, default=Path("dataset/cache"))
     parser.add_argument("--test_json", type=Path)
     parser.add_argument("--predict_csv", type=Path)
 

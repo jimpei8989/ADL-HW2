@@ -1,38 +1,12 @@
-import random
-from pathlib import Path
-from typing import List, Optional
-
 import torch
-from torch.utils.data import Dataset
-from transformers import BertTokenizer
-
-from utils.io import json_load
+from datasets.base import BaseDataset
 
 
-class ContextDataset(Dataset):
-    @classmethod
-    def from_json(cls, context_json: Path, data_json: Path, **kwargs):
-        contexts = json_load(context_json)
-        data = json_load(data_json)
-        return cls(contexts, data, **kwargs)
+class ContextDataset(BaseDataset):
+    TO_BE_PADDED = ["input_ids"]
 
-    def __init__(
-        self,
-        contexts: List[str],
-        data: List[dict],
-        num_classes: int = 7,
-        tokenizer: Optional[BertTokenizer] = None,
-        test: bool = False,
-    ):
-        super().__init__()
-        self.contexts = contexts
-        self.data = data
-        self.num_classes = num_classes
-        self.tokenizer = tokenizer
-        self.test = test
-
-    def __len__(self):
-        return len(self.data)
+    def __init__(self, *args, include_nonrelevant=1, **kwargs):
+        super().__init__(*args, include_nonrelevant=include_nonrelevant, **kwargs)
 
     def __getitem__(self, index: int):
         """
@@ -43,37 +17,19 @@ class ContextDataset(Dataset):
             input_ids: a tensor of shape (N, L)
             label: an integer
         """
-        question = self.data[index].get("question")
-        relevant = self.data[index].get("relevant")
-        nonrelevant = [p for p in self.data[index].get("paragraphs") if p != relevant]
+        d = self.data[index]
+        question_tokens = d.get("question_tokens")
+        paragraph_tokens = d.get("paragraph_tokens")
 
-        chosen = [relevant] + random.sample(
-            nonrelevant, k=min(self.num_classes - 1, len(nonrelevant))
-        )
-        random.shuffle(chosen)
-
-        question_tokens = self.tokenizer.tokenize(question)
-        target_length = 512 - len(question_tokens) - 3
-        paragraph_tokens = [self.tokenizer.tokenize(self.contexts[pid]) for pid in chosen]
-
-        input_ids = [
-            self.tokenizer.convert_tokens_to_ids(
-                ["[CLS]"] + question_tokens + ["[SEP]"] + para_tokens[:target_length] + ["[SEP]"]
-            )
-            for para_tokens in paragraph_tokens
-        ] + [[self.tokenizer.cls_token_id]] * (self.num_classes - len(chosen))
-
-        input_tensor = torch.stack(
-            [
-                torch.as_tensor(ids + [self.tokenizer.pad_token_id] * (512 - len(ids)))
-                for ids in input_ids
-            ]
+        input_ids = self.tokenizer.convert_tokens_to_ids(
+            [self.tokenizer.cls_token]
+            + question_tokens
+            + [self.tokenizer.sep_token]
+            + paragraph_tokens
+            + [self.tokenizer.sep_token]
         )
 
         return {
-            "input_ids": input_tensor,
-            "label": torch.as_tensor(
-                [int(i == chosen.index(relevant)) for i in range(self.num_classes)],
-                dtype=torch.float
-            ),
+            "input_ids": torch.as_tensor(input_ids, dtype=torch.long),
+            "label": int(d.get("has_answer")),
         }
