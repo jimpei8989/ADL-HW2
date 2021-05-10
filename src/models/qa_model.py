@@ -19,7 +19,8 @@ class QAModel(nn.Module, BaseModel):
         Arguments
             input_ids: torch.LongTensor of shape (B, N, L)
         Returns
-            logits: torch.FloatTensor of shape (B, N)
+            start_logits: torch.FloatTensor of shape (B, N)
+            end_logits: torch.FloatTensor of shape (B, N)
         """
         B, L = input_ids.shape
         bert_output = self.bert(input_ids)

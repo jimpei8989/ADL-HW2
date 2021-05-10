@@ -1,16 +1,17 @@
 {
-    "checkpoint_dir": "checkpoints/question_answering/bert_base",
+    "checkpoint_dir": "checkpoints/question_answering/albert_large",
     "trainer": {
         "epochs": 10,
         "learning_rate": 0.00001,
+        "weight_decay": 0.000005,
         "gradient_accumulate": 8,
         "checkpoint_freq": 1
     },
     "model": {
-        "bert_name": "bert-base-chinese"
+        "bert_name": "voidful/albert_chinese_large"
     },
     "misc": {
-        "batch_size": 4,
+        "batch_size": 2,
         "num_workers": 8
     }
 }
