@@ -31,5 +31,5 @@ class ContextDataset(BaseDataset):
 
         return {
             "input_ids": torch.as_tensor(input_ids, dtype=torch.long),
-            "label": int(d.get("has_answer")),
+            "label": float(d.get("has_answer")),
         }

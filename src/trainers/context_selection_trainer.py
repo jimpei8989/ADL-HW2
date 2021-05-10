@@ -10,7 +10,7 @@ class ContextSelectionTrainer(BaseTrainer):
         self.criterion = BCEWithLogitsLoss()
 
     def metrics_fn(self, y_hat, labels):
-        return {"acc": torch.eq(y_hat.argmax(dim=1), labels.argmax(dim=1)).to(torch.float).mean()}
+        return {"acc": torch.eq(y_hat.round(), labels).to(torch.float).mean()}
 
     def run_batch(self, batch):
         y_hat = self.model(batch["input_ids"].to(self.device))
