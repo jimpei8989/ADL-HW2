@@ -10,13 +10,13 @@ class QATrainer(BaseTrainer):
         self.criterion = CrossEntropyLoss()
 
     def metrics_fn(self, start_logits, end_logits, start_index, end_index):
+        start_correct = torch.eq(start_logits.argmax(dim=1), start_index)
+        end_correct = torch.eq(end_logits.argmax(dim=1), end_index)
+
         return {
-            "acc": torch.logical_and(
-                torch.eq(start_logits.argmax(dim=1), start_index),
-                torch.eq(end_logits.argmax(dim=1), end_index),
-            )
-            .to(torch.float)
-            .mean()
+            "acc": torch.logical_and(start_correct, end_correct).to(torch.float).mean(),
+            "start_acc": start_correct.to(torch.float).mean(),
+            "end_acc": end_correct.to(torch.float).mean(),
         }
 
     def run_batch(self, batch):
