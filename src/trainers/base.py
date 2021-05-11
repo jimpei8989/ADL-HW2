@@ -141,7 +141,10 @@ class BaseTrainer:
             )
 
             if epoch % self.checkpoint_freq == 0:
-                self.save_checkpoint(self.checkpoint_dir / f"checkpoint_{epoch:03d}.pt")
+                try: # In order to bypass meow1 / meow2 disk full issue
+                    self.save_checkpoint(self.checkpoint_dir / f"checkpoint_{epoch:03d}.pt")
+                except OSError as e:
+                    logger.warning(f"Trying to save a checkpoint, but '{e}' occured")
 
             training_log.append(
                 {
