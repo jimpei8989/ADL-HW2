@@ -24,7 +24,8 @@ def split_context_and_tokenize(
     add_to_dict: Optional[dict] = {},
 ):
     question_tokens = tokenizer.tokenize(question)
-    maximum_length = tokenizer.max_len_sentences_pair - len(question_tokens)
+    # maximum_length = tokenizer.max_len_sentences_pair - len(question_tokens)
+    maximum_length = 509 - len(question_tokens)
 
     raw = []
 
