@@ -1,0 +1,17 @@
+{
+    "checkpoint_dir": "checkpoints/context_selection/albert_large",
+    "trainer": {
+        "epochs": 10,
+        "learning_rate": 0.00002,
+        "weight_decay": 0.000005,
+        "gradient_accumulate": 4,
+        "checkpoint_freq": 1
+    },
+    "model": {
+        "bert_name": "voidful/albert_chinese_large"
+    },
+    "misc": {
+        "batch_size": 4,
+        "num_workers": 8
+    }
+}
