@@ -115,7 +115,7 @@ class BaseTrainer:
 
     @staticmethod
     def format_metrics(metrics):
-        return " | ".join(map(lambda p: f"{p[0]}: {p[1]:.3f}", sorted(metrics.items())))
+        return " | ".join(map(lambda p: f"{p[0]}: {p[1]:.3f}", metrics.items()))
 
     def train(self, train_dataloader, val_dataloader):
         logger.info(f"Training model for {self.total_epochs} epochs...")
