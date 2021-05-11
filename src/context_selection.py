@@ -85,7 +85,6 @@ def main(args):
                         args.dataset_dir / "context.json",
                         args.dataset_dir / "val_splitted.json",
                         tokenizer=tokenizer,
-                        num_classes=2,
                         split_name="val",
                         cache_dir=cache_dir,
                     )
@@ -98,7 +97,6 @@ def main(args):
                         args.dataset_dir / "context.json",
                         args.dataset_dir / "public.json",
                         tokenizer=tokenizer,
-                        num_classes=7,
                         split_name="public",
                         cache_dir=cache_dir,
                     )

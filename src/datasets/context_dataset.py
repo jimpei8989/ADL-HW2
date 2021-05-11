@@ -18,8 +18,8 @@ class ContextDataset(BaseDataset):
             label: an integer
         """
         d = self.data[index]
-        question_tokens = d.get("question_tokens")
-        paragraph_tokens = d.get("paragraph_tokens")
+        question_tokens = d["question_tokens"]
+        paragraph_tokens = d["paragraph_tokens"]
 
         input_ids = self.tokenizer.convert_tokens_to_ids(
             [self.tokenizer.cls_token]
@@ -31,5 +31,5 @@ class ContextDataset(BaseDataset):
 
         return {
             "input_ids": torch.as_tensor(input_ids, dtype=torch.long),
-            "label": float(d.get("has_answer")),
+            "label": float(d["has_answer"]),
         }
