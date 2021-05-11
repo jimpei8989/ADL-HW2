@@ -1,6 +1,5 @@
 import torch
 from torch.nn import BCEWithLogitsLoss
-from torch.nn import functional as nnf
 
 from trainers.base import BaseTrainer
 
@@ -11,7 +10,7 @@ class ContextSelectionTrainer(BaseTrainer):
         self.criterion = BCEWithLogitsLoss()
 
     def metrics_fn(self, y_hat, labels):
-        return {"acc": torch.eq(nnf.sigmoid(y_hat).round(), labels).to(torch.float).mean()}
+        return {"acc": torch.eq(torch.sigmoid(y_hat).round(), labels).to(torch.float).mean()}
 
     def run_batch(self, batch):
         y_hat = self.model(batch["input_ids"].to(self.device))
