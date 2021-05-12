@@ -3,11 +3,23 @@ from torch.utils.data._utils.collate import default_collate
 from torch.nn.utils.rnn import pad_sequence
 
 
+def pack(data):
+    keys = list(data.keys())
+    assert all(len(data[k]) == len(data[keys[0]]) for k in keys[1:])
+    return [{k: data[k][i] for k in data.keys()} for i in range(len(data[keys[0]]))]
+
+
+def unpack(data):
+    pass
+
+
 def create_mini_batch(batchs, pad_keys={}, padding_value=0):
     return {
         k: (
             pad_sequence([d[k] for d in batchs], batch_first=True, padding_value=padding_value)
             if k in pad_keys
+            else [d[k] for d in batchs]
+            if isinstance(batchs[0][k], list)
             else default_collate([d[k] for d in batchs])
         )
         for k in batchs[0].keys()

@@ -19,6 +19,12 @@ class BaseDataset(Dataset):
         data = json_load(data_json)
         return cls(contexts, data, **kwargs)
 
+    @classmethod
+    def from_data(cls, data, **kwargs):
+        dataset = cls(skip_proprocess=True, **kwargs)
+        dataset.data = data
+        return dataset
+
     def __init__(
         self,
         contexts: List[str],
@@ -26,8 +32,9 @@ class BaseDataset(Dataset):
         tokenizer: Optional[BertTokenizer] = None,
         test: bool = False,
         include_nonrelevant=0,
-        split_name: str = "",
+        split_name: str = "no_name",
         cache_dir: Optional[Path] = None,
+        skip_preprocess: Optional[bool] = False,
     ):
         super().__init__()
         self._contexts = contexts
@@ -35,6 +42,9 @@ class BaseDataset(Dataset):
         self.tokenizer = tokenizer
         self.test = test
         self.split_name = split_name
+
+        if skip_preprocess:
+            return
 
         cache_path = (
             (cache_dir / f"_{split_name}_preprocessed_{include_nonrelevant}.json")
@@ -47,46 +57,57 @@ class BaseDataset(Dataset):
             self.data = json_load(cache_path)
         else:
             self.data = self.preprocess_dataset(
-                self.tokenizer, contexts, data, include_nonrelevant=include_nonrelevant
+                self.tokenizer,
+                contexts,
+                data,
+                include_nonrelevant=include_nonrelevant,
+                test=self.test,
             )
             if cache_path:
                 logger.info(f"Saving cached preprocessed dataset to {cache_path}...")
                 json_dump(self.data, cache_path)
 
     @staticmethod
-    def preprocess_dataset(tokenizer, contexts, data, include_nonrelevant=0):
+    def preprocess_dataset(tokenizer, contexts, data, include_nonrelevant=0, test=False):
         def extract(d):
-            ret = [
-                split_context_and_tokenize(
-                    d["question"],
-                    contexts[d["relevant"]],
-                    tokenizer,
-                    d["answers"][0]["text"],
-                    d["answers"][0]["start"],
-                    d["answers"][0]["start"] + len(d["answers"][0]["text"]),
-                    add_to_dict={
-                        "id": d["id"],
-                    },
-                )
-            ]
-
-            nonrelevant = random.sample(
-                [p for p in d["paragraphs"] if p != d["relevant"]],
-                k=min(len(d["paragraphs"]) - 1, include_nonrelevant),
-            )
-            ret.extend(
-                [
+            if test:
+                ret = [
                     split_context_and_tokenize(
                         d["question"],
-                        contexts[nonrel],
+                        contexts[p],
                         tokenizer,
-                        add_to_dict={
-                            "id": d["id"],
-                        },
+                        add_to_dict={"id": d["id"], "paragraph": p},
                     )
-                    for nonrel in nonrelevant
+                    for p in d["paragraphs"]
                 ]
-            )
+            else:
+                ret = [
+                    split_context_and_tokenize(
+                        d["question"],
+                        contexts[d["relevant"]],
+                        tokenizer,
+                        d["answers"][0]["text"],
+                        d["answers"][0]["start"],
+                        d["answers"][0]["start"] + len(d["answers"][0]["text"]),
+                        add_to_dict={"id": d["id"]},
+                    )
+                ]
+
+                nonrelevant = random.sample(
+                    [p for p in d["paragraphs"] if p != d["relevant"]],
+                    k=min(len(d["paragraphs"]) - 1, include_nonrelevant),
+                )
+                ret.extend(
+                    [
+                        split_context_and_tokenize(
+                            d["question"],
+                            contexts[nonrel],
+                            tokenizer,
+                            add_to_dict={"id": d["id"]},
+                        )
+                        for nonrel in nonrelevant
+                    ]
+                )
             return chain.from_iterable(ret)
 
         preprocessed = list(

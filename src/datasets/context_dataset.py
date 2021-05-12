@@ -29,7 +29,9 @@ class ContextDataset(BaseDataset):
             + [self.tokenizer.sep_token]
         )
 
-        return {
-            "input_ids": torch.as_tensor(input_ids, dtype=torch.long),
-            "label": float(d["has_answer"]),
-        }
+        ret = {"input_ids": torch.as_tensor(input_ids, dtype=torch.long)}
+        if self.test:
+            ret |= d
+        else:
+            ret |= {"label": float(d["has_answer"])}
+        return ret

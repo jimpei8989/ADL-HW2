@@ -37,15 +37,19 @@ class QADataset(BaseDataset):
             + [self.tokenizer.sep_token]
         )
 
-        return {
-            "input_ids": torch.as_tensor(input_ids, dtype=torch.long),
-            "start_index": (
-                d.get("start_index") + len(question_tokens) + 2 if d.get("has_answer") else 0
-            ),
-            "end_index": (
-                d.get("end_index") + len(question_tokens) + 2 if d.get("has_answer") else 0
-            ),
-        }
+        ret = {"input_ids": torch.as_tensor(input_ids, dtype=torch.long)}
+
+        if not self.test:
+            ret |= {
+                "start_index": (
+                    d.get("start_index") + len(question_tokens) + 2 if d.get("has_answer") else 0
+                ),
+                "end_index": (
+                    d.get("end_index") + len(question_tokens) + 2 if d.get("has_answer") else 0
+                ),
+            }
+
+        return ret
 
 
 if __name__ == "__main__":
