@@ -3,6 +3,7 @@
     "trainer": {
         "epochs": 10,
         "learning_rate": 0.00001,
+        "weight_decay": 0.000005,
         "gradient_accumulate": 8,
         "checkpoint_freq": 1
     },
