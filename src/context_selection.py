@@ -43,6 +43,9 @@ def main(args):
             model, checkpoint_dir=config.checkpoint_dir, device=args.device, **config.trainer
         )
 
+        if args.resume_checkpoint:
+            trainer.load_checkpoint(args.resume_checkpoint)
+
         trainer.train(
             to_dataloader(
                 ContextDataset.from_json(
@@ -126,6 +129,7 @@ def parse_arguments():
     # Misc
     parser.add_argument("--gpu", action="store_true")
     parser.add_argument("--seed", default=0x06902029)
+    parser.add_argument("--resume_checkpoint", type=Path)
     parser.add_argument("--specify_checkpoint", type=Path)
     parser.add_argument("--override_batch_size", type=int)
 

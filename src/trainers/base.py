@@ -1,5 +1,4 @@
-from abc import abstractmethod
-from collections import defaultdict
+from abc import ABC, abstractmethod
 from typing import Optional
 from pathlib import Path
 
@@ -13,7 +12,7 @@ from utils.timer import timer
 from utils.tqdmm import tqdmm
 
 
-class BaseTrainer:
+class BaseTrainer(ABC):
     def __init__(
         self,
         model,
@@ -40,12 +39,17 @@ class BaseTrainer:
             self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         self.device = device
-
         logger.info(self.model)
 
+        self.metrics = self.create_metrics()
+        logger.info(f"Created {len(self.metrics)} metrics: {', '.join(self.metrics.keys())}")
+
     @abstractmethod
-    def metrics_fn(self, y_hat, labels):
+    def create_metrics(self):
         return {}
+
+    def update_metrics(self, *args):
+        return {name: metric.update(*args) for name, metric in self.metrics.items()}
 
     @abstractmethod
     def run_batch(self, batch):
@@ -58,10 +62,10 @@ class BaseTrainer:
     def load_checkpoint(self, checkpoint_path: Path):
         logger.info(f"Loading checkpoint from {checkpoint_path}")
 
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.cur_epoch = checkpoint["cur_epoch"]
+        self.cur_epoch = checkpoint["cur_epoch"] + 1
 
     def save_checkpoint(self, checkpoint_path: Path):
         logger.info(f"Saving current checkpoint to {checkpoint_path}")
@@ -80,7 +84,8 @@ class BaseTrainer:
         self.model.to(self.device)
 
         all_losses = []
-        all_metrics = defaultdict(list)
+        for metric in self.metrics.values():
+            metric.initialize_epoch()
 
         with torch.set_grad_enabled(train):
             original_desc = f"{split} | loss: [LOSS] | [METRICS]"
@@ -99,9 +104,6 @@ class BaseTrainer:
                         self.optimizer.step()
 
                 all_losses.append(loss.item())
-                for k, v in metrics.items():
-                    all_metrics[k].append(v)
-
                 tqdm_iterator.set_description(
                     original_desc.replace("[LOSS]", f"{loss:.4f}").replace(
                         "[METRICS]", self.format_metrics(metrics)
@@ -111,7 +113,7 @@ class BaseTrainer:
                 if train:
                     self.optimizer.step()
 
-        return np.mean(all_losses).item(), {k: np.mean(v).item() for k, v in all_metrics.items()}
+        return np.mean(all_losses).item(), {n: m.finalize_epoch() for n, m in self.metrics.items()}
 
     @staticmethod
     def format_metrics(metrics):
@@ -128,7 +130,7 @@ class BaseTrainer:
                 train_dataloader, split="train", train=True, epoch=epoch
             )
             logger.info(
-                f"Train | {train_time:7.3f}s | loss: {train_loss:.3f} | "
+                f"Train | {train_time:8.3f}s | loss: {train_loss:.3f} | "
                 f"{self.format_metrics(train_metrics)}"
             )
 
@@ -136,12 +138,12 @@ class BaseTrainer:
                 val_dataloader, split="val", epoch=epoch
             )
             logger.info(
-                f"Val   | {val_time:7.3f}s | loss: {val_loss:.3f} | "
+                f"Val   | {val_time:8.3f}s | loss: {val_loss:.3f} | "
                 f"{self.format_metrics(val_metrics)}"
             )
 
             if epoch % self.checkpoint_freq == 0:
-                try: # In order to bypass meow1 / meow2 disk full issue
+                try:  # In order to bypass meow1 / meow2 disk full issue
                     self.save_checkpoint(self.checkpoint_dir / f"checkpoint_{epoch:03d}.pt")
                 except OSError as e:
                     logger.warning(f"Trying to save a checkpoint, but '{e}' occured")
