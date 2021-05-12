@@ -16,6 +16,7 @@ from trainers.context_selection_trainer import ContextSelectionTrainer
 from trainers.qa_trainer import QATrainer
 from utils import set_seed
 from utils.config import Config
+from utils.io import json_dump
 from utils.timer import timer
 from utils.logger import logger
 
@@ -32,7 +33,7 @@ def context_selection(args, config):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
-            num_workers=config.misc.num_workers,
+            num_workers=args.override_num_workers,
             collate_fn=partial(
                 create_mini_batch,
                 pad_keys=set(ContextDataset.TO_BE_PADDED),
@@ -42,14 +43,16 @@ def context_selection(args, config):
         )
 
     dataset = ContextDataset.from_json(
-        args.dataset_dir / "context.json",
+        args.context_json,
         args.test_json,
         tokenizer=tokenizer,
         test=True,
     )
 
     model = (
-        ContextSelector.from_checkpoint(config.model, args.context_specify_checkpoint, device=args.device)
+        ContextSelector.from_checkpoint(
+            config.model, args.context_specify_checkpoint, device=args.device
+        )
         if args.context_specify_checkpoint
         else ContextSelector.load_weights(
             config.model, config.checkpoint_dir / "model_weights.pt", device=args.device
@@ -79,7 +82,7 @@ def question_answering(args, config, data):
         return DataLoader(
             dataset,
             batch_size=args.override_batch_size or config.misc.batch_size,
-            num_workers=config.misc.num_workers,
+            num_workers=args.override_num_workers,
             collate_fn=partial(
                 create_mini_batch,
                 pad_keys=set(ContextDataset.TO_BE_PADDED),
@@ -106,27 +109,31 @@ def question_answering(args, config, data):
     )
 
     predictions = trainer.predict(to_dataloader(dataset))
-    by_question = defaultdict(list)
-    for pred in predictions:
-        by_question[pred["id"]].append(pred)
+    print(predictions[0])
 
-    return {k: max(v, key=lambda d: d["context_score"]) for k, v in by_question.items()}
+
+def postprocess(d):
+    answer = ""
+    return {"id": d["id"], "answer": answer}
 
 
 def main(args):
     set_seed(args.seed)
 
-    elapsed, fragments = context_selection(args, args.context_config_json)
+    elapsed, context_predictions = context_selection(args, args.context_config_json)
     logger.info(
-        f"Finished context selection, get {len(fragments)} paragraphs"
+        f"Finished context selection, get {len(context_predictions)} paragraphs"
         f"({elapsed:.2f}s elapsed)"
     )
 
-    elapsed, final_outputs = question_answering(args, args.qa_config_json, fragments)
+    elapsed, qa_predictions = question_answering(args, args.qa_config_json, context_predictions)
     logger.info(
-        f"Finished question_answering, get {len(final_outputs)} answer spans"
+        f"Finished question_answering, get {len(qa_predictions)} answer spans"
         f"({elapsed:.2f}s elapsed)"
     )
+
+    predictions = {d["id"]: d["answer"] for d in map(postprocess, qa_predictions)}
+    json_dump(predictions, args.predict_json)
 
 
 def parse_arguments():
@@ -135,10 +142,9 @@ def parse_arguments():
     parser.add_argument("qa_config_json", type=Path, help="Path to config json file")
 
     # Filesystem
-    parser.add_argument("--dataset_dir", type=Path, default=Path("dataset/chineseQA"))
-    parser.add_argument("--cache_dir", type=Path, default=Path("dataset/cache"))
+    parser.add_argument("--context_json", type=Path)
     parser.add_argument("--test_json", type=Path)
-    parser.add_argument("--predict_csv", type=Path)
+    parser.add_argument("--predict_json", type=Path)
 
     # Misc
     parser.add_argument("--gpu", action="store_true")
@@ -146,11 +152,12 @@ def parse_arguments():
     parser.add_argument("--context_specify_checkpoint", type=Path)
     parser.add_argument("--qa_specify_checkpoint", type=Path)
     parser.add_argument("--override_batch_size", type=int)
+    parser.add_argument("--override_num_workers", type=int, default=0)
 
     args = parser.parse_args()
     args.device = torch.device("cuda" if args.gpu else "cpu")
 
-    assert all(a is not None for a in [args.test_json, args.predict_csv])
+    assert all(a is not None for a in [args.context_json, args.test_json, args.predict_json])
 
     return args
 

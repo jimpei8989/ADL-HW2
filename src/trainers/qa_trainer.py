@@ -1,9 +1,10 @@
 from collections import OrderedDict
 
 from torch.nn import CrossEntropyLoss
+
+from datasets.utils import pack
 from metrics.accuracy import Accuracy
 from metrics.f1 import F1Score
-
 from trainers.base import BaseTrainer
 
 
@@ -35,4 +36,7 @@ class QATrainer(BaseTrainer):
         )
 
     def run_predict_batch(self, batch):
-        pass
+        start_indices, end_indices = map(
+            lambda t: t.argmax(dim=-1), self.model(batch["input_ids"].to(self.device))
+        )
+        return pack(batch | {"start_index": start_indices, "end_index": end_indices})

@@ -21,7 +21,7 @@ class BaseDataset(Dataset):
 
     @classmethod
     def from_data(cls, data, **kwargs):
-        dataset = cls(skip_proprocess=True, **kwargs)
+        dataset = cls(None, None, skip_preprocess=True, **kwargs)
         dataset.data = data
         return dataset
 

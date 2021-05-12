@@ -11,7 +11,8 @@ class QADataset(BaseDataset):
         super().__init__(*args, **kwargs)
 
         # Always filter away the answers
-        self.data = list(filter(lambda d: d["has_answer"], self.data))
+        if not kwargs.get("skip_preprocess", False):
+            self.data = list(filter(lambda d: d["has_answer"], self.data))
 
     def __len__(self):
         return len(self.data)
@@ -39,7 +40,9 @@ class QADataset(BaseDataset):
 
         ret = {"input_ids": torch.as_tensor(input_ids, dtype=torch.long)}
 
-        if not self.test:
+        if self.test:
+            ret |= d
+        else:
             ret |= {
                 "start_index": (
                     d.get("start_index") + len(question_tokens) + 2 if d.get("has_answer") else 0
