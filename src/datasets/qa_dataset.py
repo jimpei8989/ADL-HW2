@@ -7,11 +7,11 @@ from datasets.base import BaseDataset
 class QADataset(BaseDataset):
     TO_BE_PADDED = ["input_ids"]
 
-    def __init__(self, *args, filter_no_answer: bool = False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if filter_no_answer:
-            self.data = list(filter(lambda d: d["has_answer"], self.data))
+        # Always filter away the answers
+        self.data = list(filter(lambda d: d["has_answer"], self.data))
 
     def __len__(self):
         return len(self.data)

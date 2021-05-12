@@ -50,7 +50,6 @@ def main(args):
                     tokenizer=tokenizer,
                     split_name="train",
                     cache_dir=cache_dir,
-                    filter_no_answer=args.filter_no_answer,
                 )
             ),
             to_dataloader(
@@ -60,7 +59,6 @@ def main(args):
                     tokenizer=tokenizer,
                     split_name="val",
                     cache_dir=cache_dir,
-                    filter_no_answer=args.filter_no_answer,
                 )
             ),
         )
@@ -79,7 +77,6 @@ def main(args):
                     tokenizer=tokenizer,
                     split_name="val",
                     cache_dir=cache_dir,
-                    filter_no_answer=args.filter_no_answer,
                 )
             ),
             split="val",
@@ -92,7 +89,6 @@ def main(args):
                     tokenizer=tokenizer,
                     split_name="public",
                     cache_dir=cache_dir,
-                    filter_no_answer=args.filter_no_answer,
                 )
             ),
             split="public",
@@ -105,8 +101,6 @@ def main(args):
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument("config_json", type=Path, help="Path to config json file")
-
-    parser.add_argument("--filter_no_answer", action="store_true")
 
     # Filesystem
     parser.add_argument("--dataset_dir", type=Path, default=Path("dataset/chineseQA"))
