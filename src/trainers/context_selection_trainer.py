@@ -1,4 +1,6 @@
 from collections import OrderedDict
+
+import torch
 from torch.nn import BCEWithLogitsLoss
 
 from trainers.base import BaseTrainer
@@ -11,7 +13,7 @@ class ContextSelectionTrainer(BaseTrainer):
         self.criterion = BCEWithLogitsLoss()
 
     def create_metrics(self):
-        return OrderedDict([("acc", Accuracy(convert_fn=lambda p, q: (p.round(), q)))])
+        return OrderedDict([("acc", Accuracy(convert_fn=lambda p, q: (torch.sigmoid(p).round(), q)))])
 
     def run_batch(self, batch):
         y_hat = self.model(batch["input_ids"].to(self.device))
