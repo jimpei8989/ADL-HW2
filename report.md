@@ -46,6 +46,9 @@ Following the guides on the homework slides, I split the task into two subtasks,
     - Question answering (validation set)
         - EM: <u>0.64979</u>
         - F1: <u>0.84613</u>
+    - Overall (public set)
+        - EM: <u>0.62762</u>
+        - F1: <u>0.69477</u>
 3. Loss function
     1. For context selection, I regard the task as a <u>binary classification</u> -- predicting whether a *fragment* has answer span in it. Thus, the loss function I use is a standard <u>binary cross entropy loss</u>.
     2. For question answering, I regard the task as a <u>span selection</u> -- predicting two 512-class indices representing the start/end index. Therefore, the loss function I use is a standard <u>cross entropy loss</u>.
@@ -66,6 +69,9 @@ Besides `bert-base-chinese`, I also tried another pretrained model, MacBert. It'
     - Question answering (validation set)
         - EM: <u>0.71127</u>
         - F1: <u>0.88021</u>
+    - Overall (public set)
+        - EM: <u>0.66222</u>
+        - F1: <u>0.73890</u>
 
 3. Difference between the pretrained model
 
