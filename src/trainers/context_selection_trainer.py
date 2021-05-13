@@ -25,4 +25,4 @@ class ContextSelectionTrainer(BaseTrainer):
 
     def run_predict_batch(self, batch):
         y_hat = self.model(batch["input_ids"].to(self.device))
-        return pack(batch | {"context_score": y_hat})
+        return pack(batch | {"context_score": y_hat.tolist()})

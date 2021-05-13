@@ -7,9 +7,9 @@ def json_load(file):
         return json.load(f)
 
 
-def json_dump(obj, file):
+def json_dump(obj, file, **kwargs):
     with open(file, "w") as f:
-        return json.dump(obj, f)
+        return json.dump(obj, f, **kwargs)
 
 
 def pickle_load(file):

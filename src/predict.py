@@ -16,7 +16,7 @@ from trainers.context_selection_trainer import ContextSelectionTrainer
 from trainers.qa_trainer import QATrainer
 from utils import set_seed
 from utils.config import Config
-from utils.io import json_dump
+from utils.io import json_dump, pickle_dump
 from utils.timer import timer
 from utils.logger import logger
 
@@ -67,7 +67,7 @@ def context_selection(args, config):
     for pred in predictions:
         by_question[pred["id"]].append(pred)
 
-    return {k: max(v, key=lambda d: d["context_score"]) for k, v in by_question.items()}
+    return [max(v, key=lambda d: d["context_score"]) for v in by_question.values()]
 
 
 @timer
@@ -109,11 +109,17 @@ def question_answering(args, config, data):
     )
 
     predictions = trainer.predict(to_dataloader(dataset))
-    print(predictions[0])
+    return predictions
 
 
 def postprocess(d):
-    answer = ""
+    offset = len(d["question_tokens"]) + 2
+    answer = "".join(
+        map(
+            lambda s: s[2:] if s.startswith("##") else s,
+            d["paragraph_tokens"][d["start_index"] - offset : d["end_index"] - offset],
+        )
+    )
     return {"id": d["id"], "answer": answer}
 
 
@@ -133,7 +139,12 @@ def main(args):
     )
 
     predictions = {d["id"]: d["answer"] for d in map(postprocess, qa_predictions)}
-    json_dump(predictions, args.predict_json)
+    json_dump(predictions, args.predict_json, ensure_ascii=False)
+
+    if args.tmp_dir:
+        args.tmp_dir.mkdir(parents=True, exist_ok=True)
+        pickle_dump(context_predictions, args.tmp_dir / "context_predictions.pkl")
+        pickle_dump(qa_predictions, args.tmp_dir / "qa_predictions.pkl")
 
 
 def parse_arguments():
@@ -145,6 +156,7 @@ def parse_arguments():
     parser.add_argument("--context_json", type=Path)
     parser.add_argument("--test_json", type=Path)
     parser.add_argument("--predict_json", type=Path)
+    parser.add_argument("--tmp_dir", type=Path)
 
     # Misc
     parser.add_argument("--gpu", action="store_true")

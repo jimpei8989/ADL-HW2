@@ -39,4 +39,6 @@ class QATrainer(BaseTrainer):
         start_indices, end_indices = map(
             lambda t: t.argmax(dim=-1), self.model(batch["input_ids"].to(self.device))
         )
-        return pack(batch | {"start_index": start_indices, "end_index": end_indices})
+        return pack(
+            batch | {"start_index": start_indices.tolist(), "end_index": end_indices.tolist()}
+        )
